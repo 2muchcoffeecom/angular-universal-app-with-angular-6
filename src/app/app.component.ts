@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { HttpClient } from '@angular/common/http';
+import { TransferState, makeStateKey } from '@angular/platform-browser';
 
 import { Observable, Subject, Subscription, of } from 'rxjs/index';
 import { filter, switchMap, map, withLatestFrom } from 'rxjs/internal/operators';
@@ -12,6 +13,8 @@ export interface Order {
   completed: boolean;
 }
 
+const PURCHASES = makeStateKey('purchases');
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -19,6 +22,7 @@ export interface Order {
 })
 export class AppComponent implements OnInit, OnDestroy {
   shoppingList$: Observable<Order[]>;
+  shoppingList: Order[];
 
   add$: Subject<null> = new Subject<null>();
   update$: Subject<{ name: string, index: number }> = new Subject<{ name: string, index: number }>();
@@ -33,10 +37,21 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(
     private dialog: MatDialog,
     private http: HttpClient,
+    private state: TransferState,
   ) { }
 
   ngOnInit() {
-    this.shoppingList$ = this.getPurchases();
+    this.shoppingList = this.state.get(PURCHASES, null as Order[]);
+    if (!this.shoppingList) {
+      this.shoppingList$ = this.getPurchases().pipe(
+        switchMap((data) => {
+          this.state.set(PURCHASES, data as any);
+          return of(data);
+        }),
+      );
+    } else {
+      this.shoppingList$ = of(this.shoppingList as Order[]);
+    }
 
     this.addSubscription = this.add$.pipe(
       switchMap(() => {
