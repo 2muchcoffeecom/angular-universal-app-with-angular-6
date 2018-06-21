@@ -22,7 +22,7 @@ import { AppComponent } from './app.component';
     DialogComponent,
   ],
   imports: [
-    BrowserModule,
+    BrowserModule.withServerTransition({ appId: 'serverApp' }),
     BrowserAnimationsModule,
 
     MatCardModule,
