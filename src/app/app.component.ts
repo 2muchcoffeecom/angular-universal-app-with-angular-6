@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
+import { HttpClient } from '@angular/common/http';
 
 import { Observable, Subject, Subscription, of } from 'rxjs/index';
 import { filter, switchMap, map, withLatestFrom } from 'rxjs/internal/operators';
@@ -17,7 +18,7 @@ export interface Order {
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit, OnDestroy {
-  shoppingList$: Observable<Order[]> = of([]);
+  shoppingList$: Observable<Order[]>;
 
   add$: Subject<null> = new Subject<null>();
   update$: Subject<{ name: string, index: number }> = new Subject<{ name: string, index: number }>();
@@ -31,9 +32,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
   constructor(
     private dialog: MatDialog,
+    private http: HttpClient,
   ) { }
 
   ngOnInit() {
+    this.shoppingList$ = this.getPurchases();
+
     this.addSubscription = this.add$.pipe(
       switchMap(() => {
         const dialogRef = this.dialog.open(DialogComponent, {
@@ -86,6 +90,10 @@ export class AppComponent implements OnInit, OnDestroy {
     this.updateSubscription.unsubscribe();
     this.deleteSubscription.unsubscribe();
     this.toggleStatusSubscription.unsubscribe();
+  }
+
+  getPurchases(): Observable<Order[]> {
+    return this.http.get<Order[]>('api/purchases');
   }
 
   add() {
